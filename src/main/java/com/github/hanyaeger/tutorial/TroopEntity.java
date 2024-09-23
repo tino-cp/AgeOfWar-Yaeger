@@ -9,7 +9,7 @@ public class TroopEntity extends Troop {
     }
 
     @Override
-    public void attack() {
+    public void attack(MainScene mainScene) {
 
     }
 }

@@ -3,12 +3,15 @@ package com.github.hanyaeger.tutorial;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.EntitySpawnerContainer;
 import com.github.hanyaeger.api.scenes.DynamicScene;
-import com.github.hanyaeger.tutorial.TroopEntity;
+
+import java.util.*;
 
 public class MainScene extends DynamicScene implements EntitySpawnerContainer {
 
-    private Artillery artillery;
-    private Troop troop;
+    private SpawnTroopButton spawnTroop1Button, spawnTroop2Button;
+    private Queue<Troop> troopQueue = new LinkedList<>();
+    private int maxTroopCount = 10;
+    private int spawnXLimit = 100;
 
     public MainScene(AgeOfWar ageOfWar) {
     }
@@ -21,29 +24,55 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
 
     @Override
     public void setupEntities() {
-        // Maak een TroopSpawner object aan
-        TroopSpawner troopSpawner = new TroopSpawner(this);
+        spawnTroop1Button = new SpawnTroopButton(new Coordinate2D(50, 50), "sprites/troop1-icon.png", 0, this);
+        spawnTroop2Button = new SpawnTroopButton(new Coordinate2D(150, 50), "sprites/troop2-icon.png", 1, this);
 
-        // Spawn de linker en rechter troepen via de spawner
-        troop = new TroopEntity(new Coordinate2D(0, getHeight() - 100), "sprites/troop.png", 50, 2);
-        addEntity(troop);
-
-        Troop troop2 = new TroopEntity(new Coordinate2D(1450, getHeight() - 100), "sprites/troop2.png", 30, -2);
-        addEntity(troop2);
-
-        troop.setEnemy(troop2);
-        troop2.setEnemy(troop);
+        addEntity(spawnTroop1Button);
+        addEntity(spawnTroop2Button);
 
         FloorEntity floor = new FloorEntity(new Coordinate2D(0, 450), this);
         addEntity(floor);
     }
 
-
     @Override
     public void setupEntitySpawners() {
-        if (artillery != null) {
-            addEntitySpawner(artillery.getProjectileSpawner());
-            System.out.print("Added Artillery projectile spawner");
+
+    }
+
+    public void spawnTroop(int troopType) {
+        if (troopQueue.size() >= maxTroopCount || getFrontLineTroops().stream().anyMatch(troop -> troop.getAnchorLocation().getX() < spawnXLimit)) {
+            return;
         }
+
+        Troop newTroop = null;
+        switch (troopType) {
+            case 0:
+                newTroop = new TroopEntity(new Coordinate2D(0, getHeight() - 100), "sprites/troop.png", 50, 2);
+                break;
+            case 1:
+                newTroop = new Artillery(new Coordinate2D(0, getHeight() - 100), "sprites/troop2.png", 20, 2, this);
+                break;
+        }
+
+        if (newTroop != null) {
+            troopQueue.add(newTroop);
+            addEntity(newTroop);
+        }
+    }
+
+    private List<Troop> getFrontLineTroops() {
+        List<Troop> frontLineTroops = new ArrayList<>();
+        double minX = Integer.MAX_VALUE;
+        for (Troop troop : troopQueue) {
+            if (troop.getAnchorLocation().getX() < minX) {
+                minX = troop.getAnchorLocation().getX();
+            }
+        }
+        for (Troop troop : troopQueue) {
+            if (troop.getAnchorLocation().getX() == minX) {
+                frontLineTroops.add(troop);
+            }
+        }
+        return frontLineTroops;
     }
 }

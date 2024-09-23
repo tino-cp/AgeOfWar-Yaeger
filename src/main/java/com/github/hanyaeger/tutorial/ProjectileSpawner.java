@@ -15,7 +15,7 @@ public class ProjectileSpawner extends EntitySpawner {
 
     @Override
     protected void spawnEntities() {
-        Projectile slingshot = new Projectile(artillery.getLocation(), artillery, 5, 3);
+        Projectile slingshot = new Projectile(artillery.getAnchorLocation(), artillery, 5, 3);
 
         spawn(slingshot);
     }
