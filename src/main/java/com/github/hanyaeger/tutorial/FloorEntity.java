@@ -20,6 +20,10 @@ public class FloorEntity extends RectangleEntity implements Collided {
 
     @Override
     public void onCollision(List<Collider> list) {
-
+        for (Collider collider : list) {
+            if (collider instanceof Projectile projectile) {
+                projectile.remove();
+            }
+        }
     }
 }

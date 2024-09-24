@@ -12,38 +12,45 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
-    private int hp;
+    protected int hp;
     private double speed;
     protected boolean canDealDamage = true;
-    private Troop enemy;
     protected Timer damageTimer;
     private int team;
+    private boolean isEngagedInCombat = false;
 
-    public Troop(Coordinate2D location, String sprite, int hp, double speed) {
+    public Troop(Coordinate2D location, String sprite, int hp, double speed, int team) {
         super(sprite, location);
         this.hp = hp;
         this.speed = speed;
+        this.team = team;
         setMotion(speed, 90d);
         damageTimer = new Timer();
-    }
-
-    public void setEnemy(Troop enemy) {
-        this.enemy = enemy;
     }
 
     public int getTeam() {
         return team;
     }
 
+    public void setTeam(int team) {
+        this.team = team;
+    }
+
+    public boolean isEngagedInCombat() {
+        return isEngagedInCombat;
+    }
 
     @Override
     public void onCollision(List<Collider> list) {
         for (Collider collider : list) {
             if (collider instanceof Troop troopEntity) {
                 Troop otherTroop = troopEntity;
-                setMotion(0, 0);
                 if (otherTroop != this && canDealDamage && otherTroop.getTeam() != this.getTeam()) {
+                    setMotion(0, 0);
+                    otherTroop.setMotion(0, 0);
                     applyDamage(otherTroop);
+                } else if (otherTroop != this && otherTroop.getTeam() == this.getTeam()) {
+                    setMotion(0, 0);
                 }
             }
         }
@@ -58,7 +65,10 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
             otherTroop.takeDamage(10);
 
             if (!otherTroop.isAlive()) {
-                continueWalking();
+                if (isAlive()) {
+                    continueWalking();
+                }
+                isEngagedInCombat = false;
             }
         }
 
@@ -76,15 +86,12 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         hp -= damage;
         if (hp <= 0) {
             remove();
-
-            if (enemy != null && enemy.isAlive()) {
-                enemy.continueWalking();
-            }
         }
     }
 
     public void continueWalking() {
         setMotion(speed, 90d);
+        isEngagedInCombat = false;
     }
 
     public boolean isAlive() {

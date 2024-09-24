@@ -30,6 +30,9 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         addEntity(spawnTroop1Button);
         addEntity(spawnTroop2Button);
 
+        Troop newTroop = new TroopEntity(new Coordinate2D(1450, getHeight() - 100), "sprites/troop.png", 200, -2, 1);
+        addEntity(newTroop);
+
         FloorEntity floor = new FloorEntity(new Coordinate2D(0, 450), this);
         addEntity(floor);
     }
@@ -47,10 +50,10 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         Troop newTroop = null;
         switch (troopType) {
             case 0:
-                newTroop = new TroopEntity(new Coordinate2D(0, getHeight() - 100), "sprites/troop.png", 50, 2);
+                newTroop = new TroopEntity(new Coordinate2D(0, getHeight() - 100), "sprites/troop.png", 50, 2, 0);
                 break;
             case 1:
-                newTroop = new Artillery(new Coordinate2D(0, getHeight() - 100), "sprites/troop2.png", 20, 2, this);
+                newTroop = new Artillery(new Coordinate2D(0, getHeight() - 100), "sprites/troop2.png", 20, 2, this, 0);
                 break;
         }
 
