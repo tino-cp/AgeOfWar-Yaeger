@@ -12,18 +12,20 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
+
     protected int hp;
     private double speed;
     protected boolean canDealDamage = true;
     protected Timer damageTimer;
     private int team;
-    private boolean isEngagedInCombat = false;
+    private MainScene mainScene;
 
-    public Troop(Coordinate2D location, String sprite, int hp, double speed, int team) {
+    public Troop(Coordinate2D location, String sprite, int hp, double speed, int team, MainScene mainScene) {
         super(sprite, location);
         this.hp = hp;
         this.speed = speed;
         this.team = team;
+        this.mainScene = mainScene;
         setMotion(speed, 90d);
         damageTimer = new Timer();
     }
@@ -32,72 +34,119 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         return team;
     }
 
-    public void setTeam(int team) {
-        this.team = team;
-    }
-
-    public boolean isEngagedInCombat() {
-        return isEngagedInCombat;
+    public boolean isAlive() {
+        return hp > 0;
     }
 
     @Override
     public void onCollision(List<Collider> list) {
         for (Collider collider : list) {
-            if (collider instanceof Troop troopEntity) {
-                Troop otherTroop = troopEntity;
-                if (otherTroop != this && canDealDamage && otherTroop.getTeam() != this.getTeam()) {
-                    setMotion(0, 0);
-                    otherTroop.setMotion(0, 0);
-                    applyDamage(otherTroop);
-                } else if (otherTroop != this && otherTroop.getTeam() == this.getTeam()) {
-                    setMotion(0, 0);
+            if (collider instanceof Troop otherTroop) {
+                if (isEnemy(otherTroop)) {
+                    manageEnemyMovement(otherTroop);
+                } else if (isFriendly(otherTroop)) {
+                    manageFriendlyMovement();
                 }
             }
         }
     }
 
-    private void applyDamage(Troop otherTroop) {
+    protected void manageEnemyMovement(Troop otherTroop) {
+        stopMovement();
 
-        setMotion(0, 0);
-        canDealDamage = false;
-
-        if (isAlive() && otherTroop.isAlive()) {
-            otherTroop.takeDamage(10);
-
-            if (!otherTroop.isAlive()) {
-                if (isAlive()) {
-                    continueWalking();
-                }
-                isEngagedInCombat = false;
-            }
+        if (team == 0) {
+            mainScene.setCanTroopsMove(false);
+        } else if (team == 1) {
+            mainScene.setCanEnemiesMove(false);
         }
 
-        TimerTask task = new TimerTask() {
+        if (canDealDamage && otherTroop.canDealDamage) {
+            applyDamage(otherTroop);
+            otherTroop.applyDamage(this);
+        }
+    }
+
+    protected void manageFriendlyMovement() {
+        if (this.getTeam() == 0 && !mainScene.canTroopsMove()) {
+            stopMovement();
+        } else if (this.getTeam() == 1 && !mainScene.canEnemiesMove()) {
+            stopMovement();
+        } else {
+            resumeMovement();
+        }
+    }
+
+    public void updateMovement() {
+        if (mainScene.canTroopsMove() && team == 0 || mainScene.canEnemiesMove() && team == 1) {
+            resumeMovement();
+            System.out.println("Moving " + (team == 0 ? "troop" : "enemy") + " forward");
+        } else {
+            stopMovement();
+            System.out.println((team == 0 ? "Troop" : "Enemy") + " stopped");
+        }
+    }
+
+
+    protected void applyDamage(Troop otherTroop) {
+        canDealDamage = false;
+
+        TimerTask damageTask = new TimerTask() {
             @Override
             public void run() {
-                canDealDamage = true;
+                if (isAlive() && otherTroop.isAlive()) {
+                    otherTroop.takeDamage(10);
+
+                    System.out.println("Dealt 10 damage to " + otherTroop + ". Remaining HP: " + otherTroop.hp);
+
+                    if (!otherTroop.isAlive()) {
+                        if (team == 0) {
+                            mainScene.setCanTroopsMove(true);
+                        } else if (team == 1) {
+                            mainScene.setCanEnemiesMove(true);
+                        }
+                    }
+                } else {
+                    cancel();
+                }
+                if (isAlive()) {
+                    canDealDamage = true;
+                }
             }
         };
 
-        damageTimer.schedule(task, 3000);
+        damageTimer.schedule(damageTask, 3000, 3000);
     }
 
-    public void takeDamage(int damage) {
+    protected void takeDamage(int damage) {
         hp -= damage;
         if (hp <= 0) {
             remove();
+
+            if (team == 0) {
+                mainScene.troopList.remove(this);
+            } else if (team == 1) {
+                mainScene.enemyList.remove(this);
+            }
+
+            damageTimer.cancel();
         }
     }
 
-    public void continueWalking() {
+    protected void stopMovement() {
+        setMotion(0, 0);
+    }
+
+    protected void resumeMovement() {
         setMotion(speed, 90d);
-        isEngagedInCombat = false;
     }
 
-    public boolean isAlive() {
-        return hp > 0;
+    protected boolean isEnemy(Troop otherTroop) {
+        return otherTroop.getTeam() != this.getTeam();
     }
 
+    protected boolean isFriendly(Troop otherTroop) {
+        return otherTroop.getTeam() == this.getTeam();
+    }
 
     @Override
     public void notifyBoundaryTouching(SceneBorder border) {
@@ -114,6 +163,4 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
                 break;
         }
     }
-
-    public abstract void attack(MainScene mainScene);
 }

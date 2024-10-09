@@ -4,21 +4,22 @@ import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.entities.Newtonian;
 import com.github.hanyaeger.api.entities.impl.DynamicCircleEntity;
+
 import javafx.scene.paint.Color;
 
-
 public class Projectile extends DynamicCircleEntity implements Collider, Newtonian {
-    private Artillery artillery;
+    private static final double GRAVITY_CONSTANT = 0.015;
+    private static final double FRICTION_CONSTANT = 0.0030;
+    private static final double RADIUS = 5;
+    private static final long SPEED = 4;
 
-    public Projectile(Coordinate2D initialLocation, Artillery artillery, double radius, double speed) {
+    public Projectile(Coordinate2D initialLocation, double angle) {
         super(initialLocation);
 
-        this.artillery = artillery;
-
-        setRadius(radius);
-        setMotion(speed, 100d);
-        setGravityConstant(0.010);
-        setFrictionConstant(0.0025);
+        setRadius(RADIUS);
+        setMotion(SPEED, angle);
+        setGravityConstant(GRAVITY_CONSTANT);
+        setFrictionConstant(FRICTION_CONSTANT);
         setFill(Color.BLACK);
     }
 }

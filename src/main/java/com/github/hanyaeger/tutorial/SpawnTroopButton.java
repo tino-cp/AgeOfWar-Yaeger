@@ -12,12 +12,11 @@ import javafx.scene.input.MouseButton;
 
 public class SpawnTroopButton extends SpriteEntity implements MouseButtonPressedListener, MouseEnterListener, MouseExitListener {
     private int troopType;
-    private String normalImage;
     private MainScene mainScene;
 
     public SpawnTroopButton(Coordinate2D location, String normalImage, int troopType, MainScene mainScene) {
         super(normalImage, location);
-        this.normalImage = normalImage;
+
         this.troopType = troopType;
         this.mainScene = mainScene;
     }
@@ -37,9 +36,5 @@ public class SpawnTroopButton extends SpriteEntity implements MouseButtonPressed
     @Override
     public void onMouseExited() {
         setCursor(Cursor.DEFAULT);
-    }
-
-    public int getTroopType() {
-        return troopType;
     }
 }
