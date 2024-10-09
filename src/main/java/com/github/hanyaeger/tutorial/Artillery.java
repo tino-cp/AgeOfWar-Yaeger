@@ -13,6 +13,8 @@ public class Artillery extends Troop implements Collided, Collider {
     public Artillery(Coordinate2D location, String sprite, int hp, double speed, int team, MainScene mainScene) {
         super(location, sprite, hp, speed, team, mainScene);
 
+        this.creditCost = 100;
+        this.creditReward = 60;
         this.projectileSpawner = new ProjectileSpawner(this);
         attack(mainScene);
     }
