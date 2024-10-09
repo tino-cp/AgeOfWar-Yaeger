@@ -8,18 +8,16 @@ import java.util.List;
 import java.util.TimerTask;
 
 public class Artillery extends Troop implements Collided, Collider {
-
     private ProjectileSpawner projectileSpawner;
 
-    public Artillery(Coordinate2D location, String sprite, int hp, double speed, MainScene mainScene) {
-        super(location, sprite, hp, speed);
+    public Artillery(Coordinate2D location, String sprite, int hp, double speed, int team, MainScene mainScene) {
+        super(location, sprite, hp, speed, team, mainScene);
 
-        this.projectileSpawner = new ProjectileSpawner(this, 1000);
+        this.projectileSpawner = new ProjectileSpawner(this);
         attack(mainScene);
     }
 
-    @Override
-    public void attack(MainScene mainScene) {
+    private void attack(MainScene mainScene) {
         projectileSpawner.resume();
         mainScene.addEntitySpawner(projectileSpawner);
     }
@@ -27,40 +25,28 @@ public class Artillery extends Troop implements Collided, Collider {
     @Override
     public void onCollision(List<Collider> colliders) {
         for (Collider collider : colliders) {
-            if (collider instanceof Troop troopEntity) {
-                Troop otherTroop = troopEntity;
-                setMotion(0, 0);
-                if (otherTroop != this && canDealDamage && otherTroop.getTeam() != this.getTeam()) {
-                    applyDamage(otherTroop);
-
-                    if (!projectileSpawner.isActive()) {
+            if (collider instanceof Troop otherTroop) {
+                if (isEnemy(otherTroop)) {
+                    if (projectileSpawner.isActive()) {
                         projectileSpawner.resume();
                     } else {
                         projectileSpawner.pause();
                     }
+                    manageEnemyMovement(otherTroop);
+
+                } else if (isFriendly(otherTroop)) {
+                    manageFriendlyMovement();
                 }
             }
         }
     }
 
-    protected void applyDamage(Troop otherTroop) {
-        canDealDamage = false;
+    @Override
+    public void takeDamage(int damage) {
+        super.takeDamage(damage);
 
-        if (isAlive() && otherTroop.isAlive()) {
-            otherTroop.takeDamage(10);
-
-            if (!otherTroop.isAlive()) {
-                continueWalking();
-            }
+        if (!isAlive()) {
+            projectileSpawner.remove();
         }
-
-        TimerTask task = new TimerTask() {
-            @Override
-            public void run() {
-                canDealDamage = true;
-            }
-        };
-
-        damageTimer.schedule(task, 3000);
     }
 }

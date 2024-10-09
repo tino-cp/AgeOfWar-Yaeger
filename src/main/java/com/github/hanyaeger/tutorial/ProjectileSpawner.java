@@ -7,16 +7,27 @@ import com.github.hanyaeger.api.entities.EntitySpawner;
 public class ProjectileSpawner extends EntitySpawner {
     private Artillery artillery;
 
-    public ProjectileSpawner(Artillery artillery, long interval) {
-        super(interval);
+    private static final double FRIENDLY_ANGLE = 100d;
+    private static final double ENEMY_ANGLE = 260d;
+    private static final long INTERVAL = 3000;
 
+    public ProjectileSpawner(Artillery artillery) {
+        super(INTERVAL);
         this.artillery = artillery;
     }
 
     @Override
     protected void spawnEntities() {
-        Projectile slingshot = new Projectile(artillery.getAnchorLocation(), artillery, 5, 3);
+        Projectile slingshot = null;
 
-        spawn(slingshot);
+        if (artillery.getTeam() == 0) {
+            slingshot = new Projectile(new Coordinate2D(artillery.getAnchorLocation().getX() + artillery.getWidth(), artillery.getAnchorLocation().getY()), FRIENDLY_ANGLE);
+        } else if (artillery.getTeam() == 1) {
+            slingshot = new Projectile(artillery.getAnchorLocation(), ENEMY_ANGLE);
+        }
+
+        if (slingshot != null) {
+            spawn(slingshot);
+        }
     }
 }
