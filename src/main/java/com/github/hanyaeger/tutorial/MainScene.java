@@ -9,6 +9,7 @@ import java.util.*;
 public class MainScene extends DynamicScene implements EntitySpawnerContainer {
 
     private SpawnTroopButton spawnTroopButton, spawnArtilleryButton;
+    private CreditText creditText;
     private Queue<Troop> troopQueue = new LinkedList<>();
     public List<Troop> troopList = new ArrayList<>();
     public List<Troop> enemyList = new ArrayList<>();
@@ -30,6 +31,7 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     @Override
     public void setupEntities() {
         setupSpawnButtons();
+        setupCreditDisplay();
         setupEnemySpawnOnTimer();
         setupFloor();
     }
@@ -60,6 +62,15 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     private void setupFloor() {
         FloorEntity floor = new FloorEntity(new Coordinate2D(0, 450), this);
         addEntity(floor);
+    }
+
+    public void setupHealthDisplay(HealthText healthText) {
+        addEntity(healthText);
+    }
+
+    public void setupCreditDisplay() {
+        creditText = new CreditText(new Coordinate2D(50, 10));
+        addEntity(creditText);
     }
 
     public void setCanTroopsMove(boolean canMove) {
@@ -95,6 +106,7 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
 
         Troop newTroop = createTroop(troopType);
         if (newTroop != null) {
+            creditText.decreaseCredit(newTroop.getCreditCost());
             troopQueue.add(newTroop);
             troopList.add(newTroop);
             addEntity(newTroop);
@@ -111,6 +123,10 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
             default:
                 return null;
         }
+    }
+
+    public CreditText getCreditText() {
+        return creditText;
     }
 
     private List<Troop> getFrontLineTroops() {

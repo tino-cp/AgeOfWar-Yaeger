@@ -19,6 +19,10 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     protected Timer damageTimer;
     private int team;
     private MainScene mainScene;
+    private HealthText healthText;
+
+    protected double creditCost = 50;
+    protected double creditReward = 30;
 
     public Troop(Coordinate2D location, String sprite, int hp, double speed, int team, MainScene mainScene) {
         super(sprite, location);
@@ -26,8 +30,11 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         this.speed = speed;
         this.team = team;
         this.mainScene = mainScene;
-        setMotion(speed, 90d);
+
         damageTimer = new Timer();
+        healthText = new HealthText(this);
+        mainScene.setupHealthDisplay(healthText);
+        resumeMovement();
     }
 
     public int getTeam() {
@@ -36,6 +43,14 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
     public boolean isAlive() {
         return hp > 0;
+    }
+
+    public int getHp() {
+        return hp;
+    }
+
+    public double getCreditCost() {
+        return creditCost;
     }
 
     @Override
@@ -61,6 +76,8 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         }
 
         if (canDealDamage && otherTroop.canDealDamage) {
+            healthText.updateHealthDisplay();
+            otherTroop.healthText.updateHealthDisplay();
             applyDamage(otherTroop);
             otherTroop.applyDamage(this);
         }
@@ -119,25 +136,40 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
     protected void takeDamage(int damage) {
         hp -= damage;
+
         if (hp <= 0) {
-            remove();
-
-            if (team == 0) {
-                mainScene.troopList.remove(this);
-            } else if (team == 1) {
-                mainScene.enemyList.remove(this);
-            }
-
+            scheduleRemoval();
             damageTimer.cancel();
         }
     }
 
+    // Wegens concurrency problemen is het beter om de verwijdering van de Troop te schedulen
+    private void scheduleRemoval() {
+        TimerTask removalTask = new TimerTask() {
+            @Override
+            public void run() {
+                if (team == 0) {
+                    mainScene.troopList.remove(Troop.this);
+                } else if (team == 1) {
+                    mainScene.enemyList.remove(Troop.this);
+                    mainScene.getCreditText().increaseCredit(creditReward);
+                }
+
+                remove();
+                healthText.remove();
+            }
+        };
+        new Timer().schedule(removalTask, 1);
+    }
+
     protected void stopMovement() {
         setMotion(0, 0);
+        healthText.setMotion(0, 0);
     }
 
     protected void resumeMovement() {
         setMotion(speed, 90d);
+        healthText.setMotion(speed, 90d);
     }
 
     protected boolean isEnemy(Troop otherTroop) {
