@@ -88,6 +88,10 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         enemyList.forEach(Troop::updateMovement);
     }
 
+    public void addHealthDisplay(HealthDisplay healthDisplay) {
+        addEntity(healthDisplay);
+    }
+
     public void spawnTroop(int troopType) {
         if (troopQueue.size() >= MAX_TROOP_COUNT || getFrontLineTroops().stream().anyMatch(troop -> troop.getAnchorLocation().getX() < SPAWN_X_LIMIT)) {
             return;

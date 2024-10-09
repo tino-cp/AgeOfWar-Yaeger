@@ -19,6 +19,7 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     protected Timer damageTimer;
     private int team;
     private MainScene mainScene;
+    private HealthDisplay healthDisplay;
 
     public Troop(Coordinate2D location, String sprite, int hp, double speed, int team, MainScene mainScene) {
         super(sprite, location);
@@ -28,6 +29,9 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         this.mainScene = mainScene;
         setMotion(speed, 90d);
         damageTimer = new Timer();
+
+        healthDisplay = new HealthDisplay(this);
+        mainScene.addHealthDisplay(healthDisplay);
     }
 
     public int getTeam() {
@@ -36,6 +40,10 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
     public boolean isAlive() {
         return hp > 0;
+    }
+
+    public int getHp() {
+        return hp;
     }
 
     @Override
@@ -119,8 +127,10 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
     protected void takeDamage(int damage) {
         hp -= damage;
+        healthDisplay.updateHealth();
         if (hp <= 0) {
             remove();
+            healthDisplay.remove();
 
             if (team == 0) {
                 mainScene.troopList.remove(this);
