@@ -9,9 +9,10 @@ import java.util.List;
 public class Artillery extends Troop implements Collided, Collider {
     private ProjectileSpawner projectileSpawner;
 
-    public Artillery(Coordinate2D location, String sprite, double speed, int team, MainScene mainScene) {
-        super(location, sprite, speed, team, mainScene);
+    public Artillery(Coordinate2D location, String sprite, int team, MainScene mainScene) {
+        super(location, sprite, team, mainScene);
 
+        // Stats
         this.hp = 50;
         this.damage = 5;
         this.creditCost = 100;
@@ -20,7 +21,9 @@ public class Artillery extends Troop implements Collided, Collider {
 
         this.projectileSpawner = new ProjectileSpawner(this);
         attack(mainScene);
-        healthText.updateHealthDisplay();
+
+        healthText.updateHealthText();
+        healthText.updateHealthTextLocation();
     }
 
     private void attack(MainScene mainScene) {

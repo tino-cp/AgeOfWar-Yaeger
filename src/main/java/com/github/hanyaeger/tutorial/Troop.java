@@ -8,40 +8,47 @@ import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.scenes.SceneBorder;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
 
-    protected int hp = 50;
-    protected int damage = 10;
-    protected long attackDelay = 3000;
-    protected double creditCost = 50;
-    protected double creditReward = 30;
+    private static final int DEFAULT_SPEED = 2;
 
-    private double speed;
+    private int speed;
     private int team;
 
+    protected int hp;
+    protected int damage;
+    protected long attackDelay;
+    protected double creditCost;
+    protected double creditReward;
+
     protected boolean canDealDamage = true;
-    protected Timer damageTimer;
+    private boolean damageTaskScheduled = false;
+
     protected HealthText healthText;
     private MainScene mainScene;
 
     private boolean scheduledForRemoval = false;
 
-    private boolean damageTaskScheduled = false;
+    private final ScheduledExecutorService executorService;
 
-    public Troop(Coordinate2D location, String sprite, double speed, int team, MainScene mainScene) {
+    public Troop(Coordinate2D location, String sprite, int team, MainScene mainScene) {
         super(sprite, location);
 
-        this.speed = speed;
         this.team = team;
         this.mainScene = mainScene;
+        this.speed = (team == 1) ? -DEFAULT_SPEED : DEFAULT_SPEED;
 
-        damageTimer = new Timer();
         healthText = new HealthText(this);
         mainScene.setupHealthDisplay(healthText);
+
         resumeMovement();
+
+        // Gebruik van een ScheduledExecutorService om de Timer en TimerTask te vervangen. Dit komt door de problemen met concurrency.
+        executorService = Executors.newSingleThreadScheduledExecutor();
     }
 
     public int getTeam() {
@@ -89,9 +96,9 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
             mainScene.setCanEnemiesMove(false);
         }
 
-        if (canDealDamage && otherTroop.canDealDamage) {
-            healthText.updateHealthDisplay();
-            otherTroop.healthText.updateHealthDisplay();
+        if (canDealDamage) {
+            healthText.updateHealthText();
+            otherTroop.healthText.updateHealthText();
             applyDamage(otherTroop);
             otherTroop.applyDamage(this);
         }
@@ -126,47 +133,40 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         damageTaskScheduled = true;
         canDealDamage = false;
 
-        TimerTask damageTask = new TimerTask() {
-            @Override
-            public void run() {
-                if (isAlive() && otherTroop.isAlive()) {
-                    otherTroop.takeDamage(damage);
+        executorService.scheduleAtFixedRate(() -> {
+            if (isAlive() && otherTroop.isAlive()) {
+                otherTroop.takeDamage(damage);
+                System.out.println("Dealt " + damage + " damage to " + otherTroop + ". Remaining HP: " + otherTroop.hp);
 
-                    System.out.println("Dealt 10 damage to " + otherTroop + ". Remaining HP: " + otherTroop.hp);
-                    System.out.println("Troop of team: " + getTeam() + "attack delay is: " + attackDelay);
-
-                    if (!otherTroop.isAlive()) {
-                        if (team == 0) {
-                            mainScene.setCanTroopsMove(true);
-                        } else if (team == 1) {
-                            mainScene.setCanEnemiesMove(true);
-                        }
-                        cancel();
-                    }
-                }
-
-                if (isAlive()) {
-                    canDealDamage = true;
-                } else {
-                    cancel();
+                if (!otherTroop.isAlive()) {
+                    onTroopDeath();
                 }
             }
 
-            @Override
-            public boolean cancel() {
+            if (isAlive()) {
+                canDealDamage = true;
+            } else {
                 damageTaskScheduled = false;
-                return super.cancel();
             }
-        };
-
-        damageTimer.schedule(damageTask, attackDelay, attackDelay);
+        }, attackDelay, attackDelay, TimeUnit.MILLISECONDS);
     }
+
+    protected void onTroopDeath() {
+        if (team == 0) {
+            mainScene.setCanTroopsMove(true);
+        } else if (team == 1) {
+            mainScene.setCanEnemiesMove(true);
+        }
+        damageTaskScheduled = false;
+    }
+
 
     protected void takeDamage(int damage) {
         hp -= damage;
 
         if (hp <= 0) {
             scheduleRemoval();
+            canDealDamage = false;
         }
     }
 
@@ -174,21 +174,17 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     private void scheduleRemoval() {
         scheduledForRemoval = true;
 
-        TimerTask removalTask = new TimerTask() {
-            @Override
-            public void run() {
-                if (team == 0) {
-                    mainScene.troopList.remove(Troop.this);
-                } else if (team == 1) {
-                    mainScene.enemyList.remove(Troop.this);
-                    mainScene.getCreditText().increaseCredit(creditReward);
-                }
-
-                remove();
-                healthText.remove();
+        executorService.schedule(() -> {
+            if (team == 0) {
+                mainScene.troopList.remove(Troop.this);
+            } else if (team == 1) {
+                mainScene.enemyList.remove(Troop.this);
+                mainScene.getCreditText().increaseCredit(creditReward);
             }
-        };
-        new Timer().schedule(removalTask, 1);
+
+            remove();
+            healthText.remove();
+        }, 1, TimeUnit.MILLISECONDS);
     }
 
     protected void stopMovement() {
