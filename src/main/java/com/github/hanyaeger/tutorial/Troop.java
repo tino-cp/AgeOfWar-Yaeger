@@ -13,20 +13,27 @@ import java.util.TimerTask;
 
 public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
 
-    protected int hp;
-    private double speed;
-    protected boolean canDealDamage = true;
-    protected Timer damageTimer;
-    private int team;
-    private MainScene mainScene;
-    private HealthText healthText;
-
+    protected int hp = 50;
+    protected int damage = 10;
+    protected long attackDelay = 3000;
     protected double creditCost = 50;
     protected double creditReward = 30;
 
-    public Troop(Coordinate2D location, String sprite, int hp, double speed, int team, MainScene mainScene) {
+    private double speed;
+    private int team;
+
+    protected boolean canDealDamage = true;
+    protected Timer damageTimer;
+    protected HealthText healthText;
+    private MainScene mainScene;
+
+    private boolean scheduledForRemoval = false;
+
+    private boolean damageTaskScheduled = false;
+
+    public Troop(Coordinate2D location, String sprite, double speed, int team, MainScene mainScene) {
         super(sprite, location);
-        this.hp = hp;
+
         this.speed = speed;
         this.team = team;
         this.mainScene = mainScene;
@@ -53,10 +60,17 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         return creditCost;
     }
 
+    public boolean isScheduledForRemoval() {
+        return scheduledForRemoval;
+    }
+
     @Override
     public void onCollision(List<Collider> list) {
         for (Collider collider : list) {
             if (collider instanceof Troop otherTroop) {
+                if (!otherTroop.isAlive() || otherTroop.isScheduledForRemoval()) {
+                    continue;
+                }
                 if (isEnemy(otherTroop)) {
                     manageEnemyMovement(otherTroop);
                 } else if (isFriendly(otherTroop)) {
@@ -105,15 +119,21 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
 
     protected void applyDamage(Troop otherTroop) {
+        if (!canDealDamage || damageTaskScheduled) {
+            return;
+        }
+
+        damageTaskScheduled = true;
         canDealDamage = false;
 
         TimerTask damageTask = new TimerTask() {
             @Override
             public void run() {
                 if (isAlive() && otherTroop.isAlive()) {
-                    otherTroop.takeDamage(10);
+                    otherTroop.takeDamage(damage);
 
                     System.out.println("Dealt 10 damage to " + otherTroop + ". Remaining HP: " + otherTroop.hp);
+                    System.out.println("Troop of team: " + getTeam() + "attack delay is: " + attackDelay);
 
                     if (!otherTroop.isAlive()) {
                         if (team == 0) {
@@ -121,17 +141,25 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
                         } else if (team == 1) {
                             mainScene.setCanEnemiesMove(true);
                         }
+                        cancel();
                     }
+                }
+
+                if (isAlive()) {
+                    canDealDamage = true;
                 } else {
                     cancel();
                 }
-                if (isAlive()) {
-                    canDealDamage = true;
-                }
+            }
+
+            @Override
+            public boolean cancel() {
+                damageTaskScheduled = false;
+                return super.cancel();
             }
         };
 
-        damageTimer.schedule(damageTask, 3000, 3000);
+        damageTimer.schedule(damageTask, attackDelay, attackDelay);
     }
 
     protected void takeDamage(int damage) {
@@ -139,12 +167,13 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
         if (hp <= 0) {
             scheduleRemoval();
-            damageTimer.cancel();
         }
     }
 
     // Wegens concurrency problemen is het beter om de verwijdering van de Troop te schedulen
     private void scheduleRemoval() {
+        scheduledForRemoval = true;
+
         TimerTask removalTask = new TimerTask() {
             @Override
             public void run() {

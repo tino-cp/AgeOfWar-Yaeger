@@ -3,12 +3,13 @@ package com.github.hanyaeger.tutorial;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.EntitySpawnerContainer;
 import com.github.hanyaeger.api.scenes.DynamicScene;
+import javafx.scene.image.Image;
 
 import java.util.*;
 
 public class MainScene extends DynamicScene implements EntitySpawnerContainer {
 
-    private SpawnTroopButton spawnTroopButton, spawnArtilleryButton;
+    private SpawnTroopButton spawnTroopButton, spawnArtilleryButton, spawnCavalryButton;
     private CreditText creditText;
     private Queue<Troop> troopQueue = new LinkedList<>();
     public List<Troop> troopList = new ArrayList<>();
@@ -40,11 +41,13 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     public void setupEntitySpawners() {}
 
     private void setupSpawnButtons() {
-        spawnTroopButton = new SpawnTroopButton(new Coordinate2D(50, 50), "sprites/troop1-icon.png", 0, this);
-        spawnArtilleryButton = new SpawnTroopButton(new Coordinate2D(150, 50), "sprites/troop2-icon.png", 1, this);
+        spawnTroopButton = new SpawnTroopButton(new Coordinate2D(50, 50), "sprites/infantry-icon.png", 0, this);
+        spawnArtilleryButton = new SpawnTroopButton(new Coordinate2D(150, 50), "sprites/artillery-icon.png", 1, this);
+        spawnCavalryButton = new SpawnTroopButton(new Coordinate2D(250, 50), "sprites/cavalry-icon.png", 2, this);
 
         addEntity(spawnTroopButton);
         addEntity(spawnArtilleryButton);
+        addEntity(spawnCavalryButton);
     }
 
     private void setupEnemySpawnOnTimer() {
@@ -52,7 +55,7 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Troop newEnemy = new Artillery(new Coordinate2D(1450, getHeight() - 100), "sprites/enemy.png", 20, -2, 1, MainScene.this);
+                Troop newEnemy = new Infantry(new Coordinate2D(1450, getHeight() - 100), "sprites/enemy.png", -2, 1, MainScene.this);
                 addEntity(newEnemy);
                 enemyList.add(newEnemy);
             }
@@ -117,9 +120,11 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         Coordinate2D location = new Coordinate2D(0, getHeight() - 100);
         switch (troopType) {
             case 0:
-                return new TroopEntity(location, "sprites/troop.png", 50, 2, 0, this);
+                return new Infantry(location, "sprites/infantry.png", 2, 0, this);
             case 1:
-                return new Artillery(location, "sprites/troop2.png", 50, 2, 0, this);
+                return new Artillery(location, "sprites/artillery.png", 2, 0, this);
+            case 2:
+                return new Cavalry(location, "sprites/cavalry.png", 2, 0, this);
             default:
                 return null;
         }
