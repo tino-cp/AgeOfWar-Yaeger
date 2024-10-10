@@ -8,33 +8,47 @@ import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.scenes.SceneBorder;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
 
-    protected int hp;
-    private double speed;
-    protected boolean canDealDamage = true;
-    protected Timer damageTimer;
+    private static final int DEFAULT_SPEED = 2;
+
+    private int speed;
     private int team;
+
+    protected int hp;
+    protected int damage;
+    protected long attackDelay;
+    protected double creditCost;
+    protected double creditReward;
+
+    protected boolean canDealDamage = true;
+    private boolean damageTaskScheduled = false;
+
+    protected HealthText healthText;
     private MainScene mainScene;
-    private HealthText healthText;
 
-    protected double creditCost = 50;
-    protected double creditReward = 30;
+    private boolean scheduledForRemoval = false;
 
-    public Troop(Coordinate2D location, String sprite, int hp, double speed, int team, MainScene mainScene) {
+    private final ScheduledExecutorService executorService;
+
+    public Troop(Coordinate2D location, String sprite, int team, MainScene mainScene) {
         super(sprite, location);
-        this.hp = hp;
-        this.speed = speed;
+
         this.team = team;
         this.mainScene = mainScene;
+        this.speed = (team == 1) ? -DEFAULT_SPEED : DEFAULT_SPEED;
 
-        damageTimer = new Timer();
         healthText = new HealthText(this);
         mainScene.setupHealthDisplay(healthText);
+
         resumeMovement();
+
+        // Gebruik van een ScheduledExecutorService om de Timer en TimerTask te vervangen. Dit komt door de problemen met concurrency.
+        executorService = Executors.newSingleThreadScheduledExecutor();
     }
 
     public int getTeam() {
@@ -53,10 +67,17 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         return creditCost;
     }
 
+    public boolean isScheduledForRemoval() {
+        return scheduledForRemoval;
+    }
+
     @Override
     public void onCollision(List<Collider> list) {
         for (Collider collider : list) {
             if (collider instanceof Troop otherTroop) {
+                if (!otherTroop.isAlive() || otherTroop.isScheduledForRemoval()) {
+                    continue;
+                }
                 if (isEnemy(otherTroop)) {
                     manageEnemyMovement(otherTroop);
                 } else if (isFriendly(otherTroop)) {
@@ -75,9 +96,9 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
             mainScene.setCanEnemiesMove(false);
         }
 
-        if (canDealDamage && otherTroop.canDealDamage) {
-            healthText.updateHealthDisplay();
-            otherTroop.healthText.updateHealthDisplay();
+        if (canDealDamage) {
+            healthText.updateHealthText();
+            otherTroop.healthText.updateHealthText();
             applyDamage(otherTroop);
             otherTroop.applyDamage(this);
         }
@@ -105,61 +126,65 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
 
     protected void applyDamage(Troop otherTroop) {
+        if (!canDealDamage || damageTaskScheduled) {
+            return;
+        }
+
+        damageTaskScheduled = true;
         canDealDamage = false;
 
-        TimerTask damageTask = new TimerTask() {
-            @Override
-            public void run() {
-                if (isAlive() && otherTroop.isAlive()) {
-                    otherTroop.takeDamage(10);
+        executorService.scheduleAtFixedRate(() -> {
+            if (isAlive() && otherTroop.isAlive()) {
+                otherTroop.takeDamage(damage);
+                System.out.println("Dealt " + damage + " damage to " + otherTroop + ". Remaining HP: " + otherTroop.hp);
 
-                    System.out.println("Dealt 10 damage to " + otherTroop + ". Remaining HP: " + otherTroop.hp);
-
-                    if (!otherTroop.isAlive()) {
-                        if (team == 0) {
-                            mainScene.setCanTroopsMove(true);
-                        } else if (team == 1) {
-                            mainScene.setCanEnemiesMove(true);
-                        }
-                    }
-                } else {
-                    cancel();
-                }
-                if (isAlive()) {
-                    canDealDamage = true;
+                if (!otherTroop.isAlive()) {
+                    onTroopDeath();
                 }
             }
-        };
 
-        damageTimer.schedule(damageTask, 3000, 3000);
+            if (isAlive()) {
+                canDealDamage = true;
+            } else {
+                damageTaskScheduled = false;
+            }
+        }, attackDelay, attackDelay, TimeUnit.MILLISECONDS);
     }
+
+    protected void onTroopDeath() {
+        if (team == 0) {
+            mainScene.setCanTroopsMove(true);
+        } else if (team == 1) {
+            mainScene.setCanEnemiesMove(true);
+        }
+        damageTaskScheduled = false;
+    }
+
 
     protected void takeDamage(int damage) {
         hp -= damage;
 
         if (hp <= 0) {
             scheduleRemoval();
-            damageTimer.cancel();
+            canDealDamage = false;
         }
     }
 
     // Wegens concurrency problemen is het beter om de verwijdering van de Troop te schedulen
     private void scheduleRemoval() {
-        TimerTask removalTask = new TimerTask() {
-            @Override
-            public void run() {
-                if (team == 0) {
-                    mainScene.troopList.remove(Troop.this);
-                } else if (team == 1) {
-                    mainScene.enemyList.remove(Troop.this);
-                    mainScene.getCreditText().increaseCredit(creditReward);
-                }
+        scheduledForRemoval = true;
 
-                remove();
-                healthText.remove();
+        executorService.schedule(() -> {
+            if (team == 0) {
+                mainScene.troopList.remove(Troop.this);
+            } else if (team == 1) {
+                mainScene.enemyList.remove(Troop.this);
+                mainScene.getCreditText().increaseCredit(creditReward);
             }
-        };
-        new Timer().schedule(removalTask, 1);
+
+            remove();
+            healthText.remove();
+        }, 1, TimeUnit.MILLISECONDS);
     }
 
     protected void stopMovement() {
