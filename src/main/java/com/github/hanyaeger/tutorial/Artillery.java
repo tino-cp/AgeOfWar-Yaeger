@@ -27,8 +27,8 @@ public class Artillery extends Troop implements Collided, Collider {
     }
 
     private void attack(MainScene mainScene) {
-        projectileSpawner.resume();
         mainScene.addEntitySpawner(projectileSpawner);
+        projectileSpawner.resume();
     }
 
     @Override
@@ -36,13 +36,8 @@ public class Artillery extends Troop implements Collided, Collider {
         for (Collider collider : colliders) {
             if (collider instanceof Troop otherTroop) {
                 if (isEnemy(otherTroop)) {
-                    if (projectileSpawner.isActive()) {
-                        projectileSpawner.resume();
-                    } else {
-                        projectileSpawner.pause();
-                    }
+                    projectileSpawner.pause();
                     manageEnemyMovement(otherTroop);
-
                 } else if (isFriendly(otherTroop)) {
                     manageFriendlyMovement();
                 }

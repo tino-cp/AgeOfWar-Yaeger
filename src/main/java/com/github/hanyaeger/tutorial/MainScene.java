@@ -3,7 +3,6 @@ package com.github.hanyaeger.tutorial;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.EntitySpawnerContainer;
 import com.github.hanyaeger.api.scenes.DynamicScene;
-import javafx.scene.image.Image;
 
 import java.util.*;
 
@@ -11,6 +10,7 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
 
     private SpawnTroopButton spawnTroopButton, spawnArtilleryButton, spawnCavalryButton;
     private CreditText creditText;
+    private ErrorText errorText;
     private Queue<Troop> troopQueue = new LinkedList<>();
     public List<Troop> troopList = new ArrayList<>();
     public List<Troop> enemyList = new ArrayList<>();
@@ -20,6 +20,9 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     private static final int MAX_TROOP_COUNT = 10;
     private static final int SPAWN_X_LIMIT = 100;
 
+    private AbilitySpawner abilitySpawner;
+    private AbilityButton abilityButton;
+
     public MainScene(AgeOfWar ageOfWar) {
     }
 
@@ -27,18 +30,26 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     public void setupScene() {
         //setBackgroundAudio("audio/AgeOfWar_ThemeSong.mp3");
         setBackgroundImage("backgrounds/background.png");
+        abilitySpawner = new AbilitySpawner(this);
     }
 
     @Override
     public void setupEntities() {
         setupSpawnButtons();
-        setupCreditDisplay();
+        setupTextDisplay();
         setupEnemySpawnOnTimer();
         setupFloor();
+        setupAbilityButton();
     }
 
     @Override
     public void setupEntitySpawners() {
+        addEntitySpawner(abilitySpawner);
+    }
+
+    private void setupAbilityButton() {
+        abilityButton = new AbilityButton(new Coordinate2D(350, 50), abilitySpawner, "sprites/ability-icon.png", this);
+        addEntity(abilityButton);
     }
 
     private void setupSpawnButtons() {
@@ -72,9 +83,12 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         addEntity(healthText);
     }
 
-    public void setupCreditDisplay() {
+    public void setupTextDisplay() {
         creditText = new CreditText(new Coordinate2D(50, 10));
         addEntity(creditText);
+
+        errorText = new ErrorText(new Coordinate2D(200, 10));
+        addEntity(errorText);
     }
 
     public void setCanTroopsMove(boolean canMove) {
@@ -133,6 +147,10 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
 
     public CreditText getCreditText() {
         return creditText;
+    }
+
+    public ErrorText getErrorText() {
+        return errorText;
     }
 
     private List<Troop> getFrontLineTroops() {
