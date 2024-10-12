@@ -47,6 +47,7 @@ public class Projectile extends DynamicCircleEntity implements Collided, Collide
         // Slingshot kan een enemy niet volledig doden. Dit is een soort van concussive damage.
         if (enemyTroop.getHp() > 5) {
             enemyTroop.takeDamage(DAMAGE);
+            artillery.healthText.updateHealthText();
         }
     }
 }

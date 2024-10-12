@@ -36,22 +36,17 @@ public class Artillery extends Troop implements Collided, Collider {
     }
 
     @Override
-    public void onCollision(List<Collider> colliders) {
-        for (Collider collider : colliders) {
-            if (collider instanceof Troop otherTroop) {
-                if (isEnemy(otherTroop)) {
-                    if (projectileSpawner.isActive()) {
-                        stopAttack();
-                    }
-
-                    manageEnemyMovement(otherTroop);
-                } else if (isFriendly(otherTroop)) {
-                    manageFriendlyMovement();
-                } else {
-                    attack();
-                }
-            }
+    protected void manageMovement(Troop otherTroop) {
+        super.manageMovement(otherTroop);
+        if (!isEnemy(otherTroop) && !isFriendly(otherTroop)) {
+            attack();
         }
+    }
+
+    @Override
+    protected void manageEnemyMovement(Troop otherTroop) {
+        super.manageEnemyMovement(otherTroop);
+        stopAttack();
     }
 
     @Override

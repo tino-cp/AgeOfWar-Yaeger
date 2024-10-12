@@ -78,12 +78,16 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
                 if (!otherTroop.isAlive() || otherTroop.isScheduledForRemoval()) {
                     continue;
                 }
-                if (isEnemy(otherTroop)) {
-                    manageEnemyMovement(otherTroop);
-                } else if (isFriendly(otherTroop)) {
-                    manageFriendlyMovement();
-                }
+                manageMovement(otherTroop);
             }
+        }
+    }
+
+    protected void manageMovement(Troop otherTroop) {
+        if (isEnemy(otherTroop)) {
+            manageEnemyMovement(otherTroop);
+        } else if (isFriendly(otherTroop)) {
+            manageFriendlyMovement();
         }
     }
 
