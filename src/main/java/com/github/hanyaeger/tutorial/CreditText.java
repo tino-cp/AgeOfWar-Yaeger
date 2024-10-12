@@ -29,4 +29,8 @@ public class CreditText extends TextEntity {
         credit += amount;
         setCreditText(credit);
     }
+
+    public double getCredit(){
+        return credit;
+    }
 }

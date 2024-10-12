@@ -20,34 +20,33 @@ public class Artillery extends Troop implements Collided, Collider {
         this.attackDelay = 5000;
 
         this.projectileSpawner = new ProjectileSpawner(this);
-        attack(mainScene);
+        mainScene.addEntitySpawner(projectileSpawner);
+        attack();
 
         healthText.updateHealthText();
         healthText.updateHealthTextLocation();
     }
 
-    private void attack(MainScene mainScene) {
+    private void attack() {
         projectileSpawner.resume();
-        mainScene.addEntitySpawner(projectileSpawner);
+    }
+
+    private void stopAttack() {
+        projectileSpawner.pause();
     }
 
     @Override
-    public void onCollision(List<Collider> colliders) {
-        for (Collider collider : colliders) {
-            if (collider instanceof Troop otherTroop) {
-                if (isEnemy(otherTroop)) {
-                    if (projectileSpawner.isActive()) {
-                        projectileSpawner.resume();
-                    } else {
-                        projectileSpawner.pause();
-                    }
-                    manageEnemyMovement(otherTroop);
-
-                } else if (isFriendly(otherTroop)) {
-                    manageFriendlyMovement();
-                }
-            }
+    protected void manageMovement(Troop otherTroop) {
+        super.manageMovement(otherTroop);
+        if (!isEnemy(otherTroop) && !isFriendly(otherTroop)) {
+            attack();
         }
+    }
+
+    @Override
+    protected void manageEnemyMovement(Troop otherTroop) {
+        super.manageEnemyMovement(otherTroop);
+        stopAttack();
     }
 
     @Override
