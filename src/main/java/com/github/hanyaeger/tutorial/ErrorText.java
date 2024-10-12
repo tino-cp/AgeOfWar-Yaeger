@@ -2,12 +2,10 @@ package com.github.hanyaeger.tutorial;
 
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.impl.TextEntity;
-import javafx.animation.PauseTransition;
-import javafx.animation.ScaleTransition;
+
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.util.Duration;
 
 import java.util.Timer;
 import java.util.TimerTask;

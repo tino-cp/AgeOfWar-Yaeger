@@ -2,6 +2,7 @@ package com.github.hanyaeger.tutorial;
 
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.EntitySpawner;
+import com.github.hanyaeger.api.media.SoundClip;
 
 
 public class ProjectileSpawner extends EntitySpawner {
@@ -20,6 +21,8 @@ public class ProjectileSpawner extends EntitySpawner {
     @Override
     protected void spawnEntities() {
         spawnProjectile();
+        SoundClip soundClip = new SoundClip("audio/artillery-throw.mp3");
+        soundClip.play();
     }
 
     private void spawnProjectile() {
