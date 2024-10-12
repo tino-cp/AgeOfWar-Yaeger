@@ -72,11 +72,11 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
                 addEntity(newEnemy);
                 enemyList.add(newEnemy);
             }
-        }, 1000, 9000);
+        }, 1000, 3000);
     }
 
     private void setupFloor() {
-        FloorEntity floor = new FloorEntity(new Coordinate2D(0, 450), this);
+        Floor floor = new Floor(new Coordinate2D(0, 450), this);
         addEntity(floor);
     }
 
@@ -85,10 +85,10 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     }
 
     public void setupTextDisplay() {
-        creditText = new CreditText(new Coordinate2D(50, 10));
+        creditText = new CreditText(new Coordinate2D(100, 20));
         addEntity(creditText);
 
-        errorText = new ErrorText(new Coordinate2D(200, 10));
+        errorText = new ErrorText(new Coordinate2D(300, 20));
         addEntity(errorText);
     }
 

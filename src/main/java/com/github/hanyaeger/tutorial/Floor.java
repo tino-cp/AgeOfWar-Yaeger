@@ -5,13 +5,14 @@ import com.github.hanyaeger.api.entities.Collided;
 import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.entities.impl.RectangleEntity;
 
+import com.github.hanyaeger.api.media.SoundClip;
 import javafx.scene.paint.Color;
 
 import java.util.List;
 
-public class FloorEntity extends RectangleEntity implements Collided {
+public class Floor extends RectangleEntity implements Collided {
 
-    public FloorEntity(Coordinate2D location, MainScene mainScene) {
+    public Floor(Coordinate2D location, MainScene mainScene) {
         super(location);
         setWidth(mainScene.getWidth());
         setHeight(50);
@@ -23,6 +24,8 @@ public class FloorEntity extends RectangleEntity implements Collided {
         for (Collider collider : list) {
             if (collider instanceof Projectile projectile) {
                 projectile.remove();
+            } else if (collider instanceof Rock rock) {
+                rock.remove();
             }
         }
     }

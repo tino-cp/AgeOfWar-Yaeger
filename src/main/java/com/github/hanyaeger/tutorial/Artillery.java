@@ -24,7 +24,7 @@ public class Artillery extends Troop implements Collided, Collider {
 
         this.projectileSpawner = new ProjectileSpawner(this);
         mainScene.addEntitySpawner(projectileSpawner);
-        attack();
+        startShooting();
 
         healthText.updateHealthText();
         healthText.updateHealthTextLocation();
@@ -34,11 +34,11 @@ public class Artillery extends Troop implements Collided, Collider {
         return CREDIT_COST;
     }
 
-    private void attack() {
+    private void startShooting() {
         projectileSpawner.resume();
     }
 
-    private void stopAttack() {
+    private void stopShooting() {
         if (projectileSpawner.isActive()) {
             projectileSpawner.pause();
         }
@@ -48,7 +48,7 @@ public class Artillery extends Troop implements Collided, Collider {
     protected void manageEnemyMovement(Troop otherTroop) {
         super.manageEnemyMovement(otherTroop);
         if (projectileSpawner.isActive()) {
-            stopAttack();
+            stopShooting();
         }
     }
 

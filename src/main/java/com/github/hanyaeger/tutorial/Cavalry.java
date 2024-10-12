@@ -18,7 +18,7 @@ public class Cavalry extends Troop {
         this.creditReward = 100;
         this.attackDelay = 2000;
 
-        this.punchSound = new SoundClip("audio/cavalry-slash.mp3");
+        this.punchSound = new SoundClip("audio/cavalry-stab.mp3");
 
         healthText.updateHealthText();
         healthText.updateHealthTextLocation();

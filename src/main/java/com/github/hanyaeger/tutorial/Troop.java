@@ -76,6 +76,10 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         return scheduledForRemoval;
     }
 
+    public boolean isDamageTaskScheduled() {
+        return damageTaskScheduled;
+    }
+
     @Override
     public void onCollision(List<Collider> list) {
         for (Collider collider : list) {
@@ -130,7 +134,6 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
             stopMovement();
         }
     }
-
 
     protected void applyDamage(Troop otherTroop) {
         if (!canDealDamage || damageTaskScheduled) {
@@ -188,7 +191,6 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     private void scheduleRemoval() {
         scheduledForRemoval = true;
 
-        executorService.schedule(() -> {
             if (team == 0) {
                 mainScene.troopList.remove(Troop.this);
             } else if (team == 1) {
@@ -199,7 +201,6 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
             remove();
             healthText.remove();
             //checkGameOver();
-        }, 1, TimeUnit.MILLISECONDS);
     }
 
     protected void stopMovement() {

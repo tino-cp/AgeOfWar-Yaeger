@@ -2,16 +2,20 @@ package com.github.hanyaeger.tutorial;
 
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.Size;
+import com.github.hanyaeger.api.entities.Collided;
 import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.entities.Newtonian;
 import com.github.hanyaeger.api.entities.impl.DynamicSpriteEntity;
 
-public class Rock extends DynamicSpriteEntity implements Collider, Newtonian {
+import java.util.List;
+
+public class Rock extends DynamicSpriteEntity implements Collided, Collider, Newtonian {
     private static final double GRAVITY_CONSTANT = 0.015;
     private static final double FRICTION_CONSTANT = 0.0030;
 
     // Size werkt wat raar, als 1 van de 2 niet is ingevuld, dan maakt hij de andere automatisch in verhouding
     private static final Size ROCK_SIZE = new Size(40, 0);
+    private static final int DAMAGE = 500;
 
     protected Rock(Coordinate2D initialLocation, double speed, double angle) {
         super("sprites/rock.png", initialLocation, ROCK_SIZE);
@@ -19,5 +23,22 @@ public class Rock extends DynamicSpriteEntity implements Collider, Newtonian {
         setGravityConstant(GRAVITY_CONSTANT);
         setFrictionConstant(FRICTION_CONSTANT);
         setMotion(speed, angle);
+    }
+
+    @Override
+    public void onCollision(List<Collider> list) {
+        for (Collider collider : list) {
+            if (collider instanceof Troop otherTroop) {
+                damageEnemy(otherTroop);
+            }
+        }
+    }
+
+    private void damageEnemy(Troop otherTroop) {
+        if (otherTroop.getTeam() == 1 && !otherTroop.isDamageTaskScheduled()) {
+            otherTroop.takeDamage(DAMAGE);
+        } else {
+            remove();
+        }
     }
 }

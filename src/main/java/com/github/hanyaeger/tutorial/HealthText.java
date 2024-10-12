@@ -1,10 +1,9 @@
 package com.github.hanyaeger.tutorial;
 
-import com.github.hanyaeger.api.AnchorPoint;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.impl.DynamicTextEntity;
+
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 import java.util.Timer;
@@ -17,9 +16,7 @@ public class HealthText extends DynamicTextEntity {
         super(new Coordinate2D(-100, -100), String.valueOf(troop.getHp()));
         this.troop = troop;
 
-        setFont(Font.font("Roboto", FontWeight.NORMAL, 20));
-        setAnchorPoint(AnchorPoint.CENTER_CENTER);
-        setFill(Color.RED);
+        FontUtils.setFont(this, 20, Color.RED);
     }
 
     public void updateHealthText() {

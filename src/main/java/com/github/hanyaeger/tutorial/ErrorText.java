@@ -4,8 +4,6 @@ import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.impl.TextEntity;
 
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -15,8 +13,7 @@ public class ErrorText extends TextEntity {
 
     public ErrorText(Coordinate2D initialLocation) {
         super(initialLocation);
-        setFont(Font.font("Roboto", FontWeight.NORMAL, 20));
-        setFill(Color.RED);
+        FontUtils.setFont(this, 20, Color.RED);
     }
 
     public void errorNotEnoughCredits() {

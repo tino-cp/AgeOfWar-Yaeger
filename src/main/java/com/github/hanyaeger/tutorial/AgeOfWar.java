@@ -15,15 +15,16 @@ public class AgeOfWar extends YaegerGame {
     public void setupGame() {
         setSize(new Size(WIDTH, HEIGHT));
         setGameTitle("Age Of War");
-        //setBackgroundAudio("audio/AgeOfWar_ThemeSong.mp3");
+        //setBackgroundAudio("audio/ageofwar-song.mp3");
     }
 
     @Override
     public void setupScenes() {
         addScene(0, new Scene(this, "Age Of War"));
         addScene(1, new MainScene(this));
-        addScene(2, new Scene(this, "Game Over"));
-        addScene(3, new Scene(this, "You Won"));
+        addScene(2, new Scene(this, "Defeat!"));
+        addScene(3, new Scene(this, "Victory!"));
+        setActiveScene(3);
     }
 }
 
