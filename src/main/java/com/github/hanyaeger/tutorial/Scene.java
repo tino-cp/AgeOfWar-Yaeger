@@ -2,6 +2,8 @@ package com.github.hanyaeger.tutorial;
 
 import com.github.hanyaeger.api.AnchorPoint;
 import com.github.hanyaeger.api.Coordinate2D;
+import com.github.hanyaeger.api.entities.impl.DynamicSpriteEntity;
+import com.github.hanyaeger.api.entities.impl.SpriteEntity;
 import com.github.hanyaeger.api.entities.impl.TextEntity;
 import com.github.hanyaeger.api.scenes.StaticScene;
 import javafx.scene.paint.Color;
@@ -24,26 +26,29 @@ public class Scene extends StaticScene {
 
     @Override
     public void setupEntities() {
-        TextEntity mainText = new TextEntity(
-                new Coordinate2D(getWidth() / 2, getHeight() / 2),
-                sceneText
-        );
+        if ("Age Of War".equals(sceneText)) {
+            LogoEntity logo = new LogoEntity(new Coordinate2D(getWidth() / 2, getHeight() / 3));
+            logo.setAnchorPoint(AnchorPoint.CENTER_CENTER);
+            addEntity(logo);
 
-        mainText.setAnchorPoint(AnchorPoint.CENTER_CENTER);
-        mainText.setFill(Color.DARKBLUE);
-        mainText.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 80));
-        addEntity(mainText);
+            Button startButton = new Button(
+                    new Coordinate2D(getWidth() / 2, getHeight() / 1.5),
+                    "Start Game",
+                    action -> ageOfWar.setActiveScene(1)
+            );
+            addEntity(startButton);
+        } else {
+            TextEntity mainText = new TextEntity(
+                    new Coordinate2D(getWidth() / 2, getHeight() / 2),
+                    sceneText
+            );
 
-        switch (sceneText) {
-            case "Age Of War":
-                Button startButton = new Button(
-                        new Coordinate2D(getWidth() / 2, getHeight() / 1.5),
-                        "Start Game",
-                        action -> ageOfWar.setActiveScene(1)
-                );
-                addEntity(startButton);
-                break;
-            case "Game Over", "You Won":
+            mainText.setAnchorPoint(AnchorPoint.CENTER_CENTER);
+            mainText.setFill(Color.DARKBLUE);
+            mainText.setFont(Font.font("Roboto", FontWeight.SEMI_BOLD, 80));
+            addEntity(mainText);
+
+            if ("Game Over".equals(sceneText) || "You Won".equals(sceneText)) {
                 Button playAgainButton = new Button(
                         new Coordinate2D(getWidth() / 4, getHeight() / 1.5),
                         "Play Again",
@@ -57,9 +62,7 @@ public class Scene extends StaticScene {
                         action -> ageOfWar.quit()
                 );
                 addEntity(quitButton);
-                break;
-            default:
-                break;
+            }
         }
     }
 }

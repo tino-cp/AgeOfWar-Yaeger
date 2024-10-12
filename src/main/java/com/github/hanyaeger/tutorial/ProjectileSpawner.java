@@ -12,7 +12,6 @@ public class ProjectileSpawner extends EntitySpawner {
     private static final double ENEMY_ANGLE = 270d;
     private static final long INTERVAL = 3000;
 
-
     public ProjectileSpawner(Artillery artillery) {
         super(INTERVAL);
         this.artillery = artillery;
