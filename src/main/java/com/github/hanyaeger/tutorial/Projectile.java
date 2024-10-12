@@ -6,6 +6,7 @@ import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.entities.Newtonian;
 import com.github.hanyaeger.api.entities.impl.DynamicCircleEntity;
 
+import com.github.hanyaeger.api.media.SoundClip;
 import javafx.scene.paint.Color;
 
 import java.util.List;
@@ -34,20 +35,22 @@ public class Projectile extends DynamicCircleEntity implements Collided, Collide
     @Override
     public void onCollision(List<Collider> list) {
         for (Collider collider : list) {
-            if (collider instanceof Troop enemyTroop) {
-                if (artillery.isEnemy(enemyTroop)) {
-                    applyConcussiveDamage(enemyTroop);
-                    remove();
-                }
+            if (collider instanceof Troop enemyTroop && artillery.isEnemy(enemyTroop)) {
+                applyConcussiveDamage(enemyTroop);
+                SoundClip soundClip = new SoundClip("audio/hit.mp3");
+                soundClip.play();
+                remove();
             }
         }
     }
 
     private void applyConcussiveDamage(Troop enemyTroop) {
         // Slingshot kan een enemy niet volledig doden. Dit is een soort van concussive damage.
-        if (enemyTroop.getHp() > 5) {
+        final int CONCUSSION_HEALTH = 5;
+
+        if (enemyTroop.getHp() > CONCUSSION_HEALTH) {
             enemyTroop.takeDamage(DAMAGE);
-            artillery.healthText.updateHealthText();
+            enemyTroop.healthText.updateHealthText();
         }
     }
 }

@@ -7,29 +7,29 @@ import com.github.hanyaeger.api.scenes.DynamicScene;
 import java.util.*;
 
 public class MainScene extends DynamicScene implements EntitySpawnerContainer {
+    private AgeOfWar ageOfWar;
 
-    private SpawnTroopButton spawnTroopButton, spawnArtilleryButton, spawnCavalryButton;
     private CreditText creditText;
     private ErrorText errorText;
+
     private Queue<Troop> troopQueue = new LinkedList<>();
     public List<Troop> troopList = new ArrayList<>();
     public List<Troop> enemyList = new ArrayList<>();
+
     private boolean canTroopsMove = true;
     private boolean canEnemiesMove = true;
 
     private static final int MAX_TROOP_COUNT = 10;
     private static final int SPAWN_X_LIMIT = 100;
 
-    private ProjectileSpawner projectileSpawner;
     private AbilitySpawner abilitySpawner;
-    private AbilityButton abilityButton;
 
     public MainScene(AgeOfWar ageOfWar) {
+        this.ageOfWar = ageOfWar;
     }
 
     @Override
     public void setupScene() {
-        //setBackgroundAudio("audio/AgeOfWar_ThemeSong.mp3");
         setBackgroundImage("backgrounds/background.png");
         abilitySpawner = new AbilitySpawner(this);
     }
@@ -49,14 +49,14 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     }
 
     private void setupAbilityButton() {
-        abilityButton = new AbilityButton(new Coordinate2D(350, 50), abilitySpawner, "sprites/ability-icon.png", this);
+        AbilityButton abilityButton = new AbilityButton(new Coordinate2D(350, 50), abilitySpawner, "sprites/ability-icon.png", this);
         addEntity(abilityButton);
     }
 
     private void setupSpawnButtons() {
-        spawnTroopButton = new SpawnTroopButton(new Coordinate2D(50, 50), "sprites/infantry-icon.png", 0, this);
-        spawnArtilleryButton = new SpawnTroopButton(new Coordinate2D(150, 50), "sprites/artillery-icon.png", 1, this);
-        spawnCavalryButton = new SpawnTroopButton(new Coordinate2D(250, 50), "sprites/cavalry-icon.png", 2, this);
+        SpawnTroopButton spawnTroopButton = new SpawnTroopButton(new Coordinate2D(50, 50), "sprites/infantry-icon.png", 0, this);
+        SpawnTroopButton spawnArtilleryButton = new SpawnTroopButton(new Coordinate2D(150, 50), "sprites/artillery-icon.png", 1, this);
+        SpawnTroopButton spawnCavalryButton = new SpawnTroopButton(new Coordinate2D(250, 50), "sprites/cavalry-icon.png", 2, this);
 
         addEntity(spawnTroopButton);
         addEntity(spawnArtilleryButton);
@@ -68,11 +68,11 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                Troop newEnemy = new Infantry(new Coordinate2D(1450, getHeight() - 100), "sprites/enemy.png", 1, MainScene.this);
+                Troop newEnemy = new Infantry(new Coordinate2D(1450, getHeight() - 100), "sprites/enemy.png", 1, MainScene.this, ageOfWar);
                 addEntity(newEnemy);
                 enemyList.add(newEnemy);
             }
-        }, 1000, 4000);
+        }, 1000, 9000);
     }
 
     private void setupFloor() {
@@ -123,12 +123,17 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
             return;
         }
 
-        Troop newTroop = createTroop(troopType);
-        if (newTroop != null) {
-            creditText.decreaseCredit(newTroop.getCreditCost());
+        double requiredCredits = getTroopCreditCost(troopType);
+
+        if (creditText.getCredit() >= requiredCredits) {
+            Troop newTroop = createTroop(troopType);
+
+            creditText.decreaseCredit(requiredCredits);
             troopQueue.add(newTroop);
             troopList.add(newTroop);
             addEntity(newTroop);
+        } else {
+            errorText.errorNotEnoughCredits();
         }
     }
 
@@ -136,13 +141,26 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         Coordinate2D location = new Coordinate2D(0, getHeight() - 100);
         switch (troopType) {
             case 0:
-                return new Infantry(location, "sprites/infantry.png", 0, this);
+                return new Infantry(location, "sprites/infantry.png", 0, this, ageOfWar);
             case 1:
-                return new Artillery(location, "sprites/artillery.png", 0, this);
+                return new Artillery(location, "sprites/artillery.png", 0, this, ageOfWar);
             case 2:
-                return new Cavalry(location, "sprites/cavalry.png", 0, this);
+                return new Cavalry(location, "sprites/cavalry.png", 0, this, ageOfWar);
             default:
                 return null;
+        }
+    }
+
+    private double getTroopCreditCost(int troopType) {
+        switch (troopType) {
+            case 0:
+                return Infantry.getCreditCostStatic();
+            case 1:
+                return Artillery.getCreditCostStatic();
+            case 2:
+                return Cavalry.getCreditCostStatic();
+            default:
+                return 0;
         }
     }
 

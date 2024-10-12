@@ -8,6 +8,7 @@ import java.util.Random;
 public class AbilitySpawner extends EntitySpawner {
 
     private MainScene mainScene;
+    private Random random = new Random();
 
     public AbilitySpawner(MainScene mainScene) {
         super(150);
@@ -22,7 +23,7 @@ public class AbilitySpawner extends EntitySpawner {
     }
 
     private void spawnRock() {
-        int randomIndex = new Random().nextInt(4);
+        int randomIndex = random.nextInt(4);
         double direction = switch (randomIndex) {
             case 0 -> 355d;
             case 1 -> 358d;
@@ -36,7 +37,7 @@ public class AbilitySpawner extends EntitySpawner {
     private Coordinate2D randomLocation() {
         // Het y-coördinaat is buiten het scherm, zodat je de rotsen niet ziet spawnen
         double y = -100;
-        double x = new Random().nextDouble() * mainScene.getWidth();
+        double x = random.nextDouble(mainScene.getWidth());
 
         return new Coordinate2D(x, y);
     }

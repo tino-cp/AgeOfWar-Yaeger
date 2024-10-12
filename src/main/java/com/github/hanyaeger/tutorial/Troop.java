@@ -5,6 +5,7 @@ import com.github.hanyaeger.api.entities.Collided;
 import com.github.hanyaeger.api.entities.SceneBorderTouchingWatcher;
 import com.github.hanyaeger.api.entities.impl.DynamicSpriteEntity;
 import com.github.hanyaeger.api.entities.Collider;
+import com.github.hanyaeger.api.media.SoundClip;
 import com.github.hanyaeger.api.scenes.SceneBorder;
 
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
+    private MainScene mainScene;
+    private AgeOfWar ageOfWar;
 
     private static final int DEFAULT_SPEED = 2;
 
@@ -29,18 +32,20 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     private boolean damageTaskScheduled = false;
 
     protected HealthText healthText;
-    private MainScene mainScene;
+    protected SoundClip punchSound;
 
     private boolean scheduledForRemoval = false;
 
     private final ScheduledExecutorService executorService;
 
-    public Troop(Coordinate2D location, String sprite, int team, MainScene mainScene) {
+    protected Troop(Coordinate2D location, String sprite, int team, MainScene mainScene, AgeOfWar ageOfWar) {
         super(sprite, location);
 
         this.team = team;
         this.mainScene = mainScene;
+        this.ageOfWar = ageOfWar;
         this.speed = (team == 1) ? -DEFAULT_SPEED : DEFAULT_SPEED;
+
 
         healthText = new HealthText(this);
         mainScene.setupHealthDisplay(healthText);
@@ -121,10 +126,8 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     public void updateMovement() {
         if (mainScene.canTroopsMove() && team == 0 || mainScene.canEnemiesMove() && team == 1) {
             resumeMovement();
-            System.out.println("Moving " + (team == 0 ? "troop" : "enemy") + " forward");
         } else {
             stopMovement();
-            System.out.println((team == 0 ? "Troop" : "Enemy") + " stopped");
         }
     }
 
@@ -140,10 +143,10 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         executorService.scheduleAtFixedRate(() -> {
             if (isAlive() && otherTroop.isAlive()) {
                 otherTroop.takeDamage(damage);
-                System.out.println("Dealt " + damage + " damage to " + otherTroop + ". Remaining HP: " + otherTroop.hp);
+                punchSound.play();
 
                 if (!otherTroop.isAlive()) {
-                    onTroopDeath();
+                    onEnemyDeath();
                 }
             }
 
@@ -155,7 +158,7 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         }, attackDelay, attackDelay, TimeUnit.MILLISECONDS);
     }
 
-    protected void onTroopDeath() {
+    protected void onEnemyDeath() {
         if (team == 0) {
             mainScene.setCanTroopsMove(true);
         } else if (team == 1) {
@@ -169,10 +172,16 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         hp -= damage;
 
         if (!isAlive()) {
-            scheduleRemoval();
-            canDealDamage = false;
-            executorService.shutdown();
+            onTroopDeath();
         }
+    }
+
+    private void onTroopDeath() {
+        SoundClip deathSound = new SoundClip("audio/death.mp3");
+        deathSound.play();
+        scheduleRemoval();
+        canDealDamage = false;
+        executorService.shutdown();
     }
 
     // Wegens concurrency problemen is het beter om de verwijdering van de Troop te schedulen
@@ -189,6 +198,7 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
             remove();
             healthText.remove();
+            //checkGameOver();
         }, 1, TimeUnit.MILLISECONDS);
     }
 
@@ -210,6 +220,13 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         return otherTroop.getTeam() == this.getTeam();
     }
 
+    // TODO: Bugfix veranderen vanaf mainScene naar een andere scene
+    public void checkGameOver() {
+        if (mainScene.enemyList.isEmpty()) {
+            ageOfWar.setActiveScene(2);
+        }
+    }
+
     @Override
     public void notifyBoundaryTouching(SceneBorder border) {
         switch (border) {
@@ -221,6 +238,7 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
                 break;
             case RIGHT:
                 setAnchorLocationX(getSceneWidth() - getWidth());
+                break;
             default:
                 break;
         }

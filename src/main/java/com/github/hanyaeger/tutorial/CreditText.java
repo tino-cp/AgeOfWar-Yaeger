@@ -7,7 +7,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 public class CreditText extends TextEntity {
-    private double credit = 5000;
+    private double credit = 1000;
 
     public CreditText(Coordinate2D initialLocation) {
         super(initialLocation);
