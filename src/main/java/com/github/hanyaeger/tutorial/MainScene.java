@@ -20,6 +20,7 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
     private static final int MAX_TROOP_COUNT = 10;
     private static final int SPAWN_X_LIMIT = 100;
 
+    private ProjectileSpawner projectileSpawner;
     private AbilitySpawner abilitySpawner;
     private AbilityButton abilityButton;
 

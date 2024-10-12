@@ -36,12 +36,17 @@ public class Projectile extends DynamicCircleEntity implements Collided, Collide
         for (Collider collider : list) {
             if (collider instanceof Troop enemyTroop) {
                 if (artillery.isEnemy(enemyTroop)) {
-                    // TODO: Implement logic when enemy dies to projectile. Right now when enemy dies to projectile, the canTroopsMove logic isnt working properly.
-                    // TODO: Fix why the spawner cant be pause or resumed at all.
-                    //enemyTroop.takeDamage(DAMAGE);
+                    applyConcussiveDamage(enemyTroop);
                     remove();
                 }
             }
+        }
+    }
+
+    private void applyConcussiveDamage(Troop enemyTroop) {
+        // Slingshot kan een enemy niet volledig doden. Dit is een soort van concussive damage.
+        if (enemyTroop.getHp() > 5) {
+            enemyTroop.takeDamage(DAMAGE);
         }
     }
 }

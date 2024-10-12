@@ -20,15 +20,19 @@ public class Artillery extends Troop implements Collided, Collider {
         this.attackDelay = 5000;
 
         this.projectileSpawner = new ProjectileSpawner(this);
-        attack(mainScene);
+        mainScene.addEntitySpawner(projectileSpawner);
+        attack();
 
         healthText.updateHealthText();
         healthText.updateHealthTextLocation();
     }
 
-    private void attack(MainScene mainScene) {
-        mainScene.addEntitySpawner(projectileSpawner);
+    private void attack() {
         projectileSpawner.resume();
+    }
+
+    private void stopAttack() {
+        projectileSpawner.pause();
     }
 
     @Override
@@ -36,10 +40,15 @@ public class Artillery extends Troop implements Collided, Collider {
         for (Collider collider : colliders) {
             if (collider instanceof Troop otherTroop) {
                 if (isEnemy(otherTroop)) {
-                    projectileSpawner.pause();
+                    if (projectileSpawner.isActive()) {
+                        stopAttack();
+                    }
+
                     manageEnemyMovement(otherTroop);
                 } else if (isFriendly(otherTroop)) {
                     manageFriendlyMovement();
+                } else {
+                    attack();
                 }
             }
         }
