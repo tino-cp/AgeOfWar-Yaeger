@@ -24,7 +24,6 @@ public class AgeOfWar extends YaegerGame {
         addScene(1, new MainScene(this));
         addScene(2, new Scene(this, "Defeat!"));
         addScene(3, new Scene(this, "Victory!"));
-        setActiveScene(3);
     }
 }
 

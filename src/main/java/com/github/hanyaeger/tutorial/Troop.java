@@ -191,16 +191,16 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     private void scheduleRemoval() {
         scheduledForRemoval = true;
 
-            if (team == 0) {
-                mainScene.troopList.remove(Troop.this);
-            } else if (team == 1) {
-                mainScene.enemyList.remove(Troop.this);
-                mainScene.getCreditText().increaseCredit(creditReward);
-            }
+        if (team == 0) {
+            mainScene.troopList.remove(Troop.this);
+        } else if (team == 1) {
+            mainScene.enemyList.remove(Troop.this);
+            mainScene.getCreditText().increaseCredit(creditReward);
+        }
 
-            remove();
-            healthText.remove();
-            //checkGameOver();
+        remove();
+        healthText.remove();
+        checkGameOver();
     }
 
     protected void stopMovement() {
