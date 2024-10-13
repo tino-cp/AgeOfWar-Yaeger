@@ -6,7 +6,7 @@ import com.github.hanyaeger.api.entities.impl.TextEntity;
 import javafx.scene.paint.Color;
 
 public class CreditText extends TextEntity {
-    private double credit = 100000;
+    private double credit = 100;
 
     public CreditText(Coordinate2D initialLocation) {
         super(initialLocation);

@@ -72,7 +72,7 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
                 addEntity(newEnemy);
                 enemyList.add(newEnemy);
             }
-        }, 1000, 3000);
+        }, 1000, 8000);
     }
 
     private void setupFloor() {

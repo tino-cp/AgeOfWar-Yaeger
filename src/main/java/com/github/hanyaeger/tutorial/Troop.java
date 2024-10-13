@@ -7,11 +7,11 @@ import com.github.hanyaeger.api.entities.impl.DynamicSpriteEntity;
 import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.media.SoundClip;
 import com.github.hanyaeger.api.scenes.SceneBorder;
+import javafx.application.Platform;
 
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
     private MainScene mainScene;
@@ -33,10 +33,9 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
 
     protected HealthText healthText;
     protected SoundClip punchSound;
+    private Timer damageTimer;
 
     private boolean scheduledForRemoval = false;
-
-    private final ScheduledExecutorService executorService;
 
     protected Troop(Coordinate2D location, String sprite, int team, MainScene mainScene, AgeOfWar ageOfWar) {
         super(sprite, location);
@@ -46,14 +45,13 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         this.ageOfWar = ageOfWar;
         this.speed = (team == 1) ? -DEFAULT_SPEED : DEFAULT_SPEED;
 
-
         healthText = new HealthText(this);
         mainScene.setupHealthDisplay(healthText);
 
         resumeMovement();
 
         // Gebruik van een ScheduledExecutorService om de Timer en TimerTask te vervangen. Dit komt door de problemen met concurrency.
-        executorService = Executors.newSingleThreadScheduledExecutor();
+        damageTimer = new Timer();
     }
 
     public int getTeam() {
@@ -143,22 +141,27 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         damageTaskScheduled = true;
         canDealDamage = false;
 
-        executorService.scheduleAtFixedRate(() -> {
-            if (isAlive() && otherTroop.isAlive()) {
-                otherTroop.takeDamage(damage);
-                punchSound.play();
+        damageTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> {
+                    if (isAlive() && otherTroop.isAlive()) {
+                        otherTroop.takeDamage(damage);
+                        punchSound.play();
 
-                if (!otherTroop.isAlive()) {
-                    onEnemyDeath();
-                }
-            }
+                        if (!otherTroop.isAlive()) {
+                            onEnemyDeath();
+                        }
+                    }
 
-            if (isAlive()) {
-                canDealDamage = true;
-            } else {
-                damageTaskScheduled = false;
+                    if (isAlive()) {
+                        canDealDamage = true;
+                    } else {
+                        damageTaskScheduled = false;
+                    }
+                });
             }
-        }, attackDelay, attackDelay, TimeUnit.MILLISECONDS);
+        }, attackDelay, attackDelay);
     }
 
     protected void onEnemyDeath() {
@@ -184,10 +187,8 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         deathSound.play();
         scheduleRemoval();
         canDealDamage = false;
-        executorService.shutdown();
     }
 
-    // Wegens concurrency problemen is het beter om de verwijdering van de Troop te schedulen
     private void scheduleRemoval() {
         scheduledForRemoval = true;
 
@@ -198,8 +199,9 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
             mainScene.getCreditText().increaseCredit(creditReward);
         }
 
-        remove();
         healthText.remove();
+        remove();
+
         checkGameOver();
     }
 
@@ -221,10 +223,10 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         return otherTroop.getTeam() == this.getTeam();
     }
 
-    // TODO: Bugfix veranderen vanaf mainScene naar een andere scene
     public void checkGameOver() {
         if (mainScene.enemyList.isEmpty()) {
-            ageOfWar.setActiveScene(2);
+            damageTimer.cancel();
+            ageOfWar.setActiveScene(3);
         }
     }
 

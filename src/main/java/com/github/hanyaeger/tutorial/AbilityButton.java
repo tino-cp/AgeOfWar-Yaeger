@@ -16,7 +16,7 @@ public class AbilityButton extends SpriteEntity implements MouseButtonPressedLis
     private static final long COOLDOWN_TIME = 10000;
     private static final double OPACITY_DISABLED = 0.5;
     private static final double OPACITY_DEFAULT = 1;
-    private static final double CREDIT_COST = 500;
+    private static final double CREDIT_COST = 5000;
 
     private final MainScene mainScene;
     private final AbilitySpawner abilitySpawner;

@@ -47,7 +47,10 @@ public class Scene extends StaticScene {
                 Button playAgainButton = new Button(
                         new Coordinate2D(getWidth() / 4, getHeight() / 1.5),
                         "Play Again?",
-                        action -> ageOfWar.setActiveScene(1)
+                        action -> {
+                            ageOfWar.addScene(1, new MainScene(ageOfWar));
+                            ageOfWar.setActiveScene(1);
+                        }
                 );
                 addEntity(playAgainButton);
 
