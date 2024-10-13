@@ -224,7 +224,7 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     // TODO: Bugfix veranderen vanaf mainScene naar een andere scene
     public void checkGameOver() {
         if (mainScene.enemyList.isEmpty()) {
-            ageOfWar.setActiveScene(2);
+            ageOfWar.setActiveScene(3);
         }
     }
 
