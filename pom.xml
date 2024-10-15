@@ -37,7 +37,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.github.hanyaeger.tutorial.AgeOfWar</mainClass>
+                    <mainClass>com.github.hanyaeger.ageofwar.AgeOfWar</mainClass>
                 </configuration>
             </plugin>
         </plugins>

@@ -1,37 +1,45 @@
-package com.github.hanyaeger.tutorial;
+package com.github.hanyaeger.ageofwar.entities.troops;
 
+import com.github.hanyaeger.ageofwar.entities.scenes.MainScene;
+import com.github.hanyaeger.ageofwar.entities.projectiles.ProjectileSpawner;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.Collided;
 import com.github.hanyaeger.api.entities.Collider;
 import com.github.hanyaeger.api.media.SoundClip;
 
 public class Artillery extends Troop implements Collided, Collider {
-    private ProjectileSpawner projectileSpawner;
-
     private static final double CREDIT_COST = 100;
 
-    public Artillery(Coordinate2D location, String sprite, int team, MainScene mainScene, AgeOfWar ageOfWar) {
-        super(location, sprite, team, mainScene, ageOfWar);
+    private ProjectileSpawner projectileSpawner;
 
-        // Stats
-        this.hp = 50;
-        this.damage = 5;
-        this.creditCost = 100;
-        this.creditReward = 60;
-        this.attackDelay = 5000;
-
-        this.punchSound = new SoundClip("audio/artillery-punch.mp3");
-
-        this.projectileSpawner = new ProjectileSpawner(this);
-        mainScene.addEntitySpawner(projectileSpawner);
-        startShooting();
-
-        healthText.updateHealthText();
-        healthText.updateHealthTextLocation();
+    public Artillery(Coordinate2D location, String sprite, int team, MainScene mainScene) {
+        super(location, sprite, team, mainScene);
+        initializeStats();
+        initializeSound();
+        initializeProjectileSpawner(mainScene);
+        healthText.initialize();
     }
 
     public static double getCreditCostStatic() {
         return CREDIT_COST;
+    }
+
+    private void initializeStats() {
+        this.hp = 50;
+        this.damage = 5;
+        this.creditCost = CREDIT_COST;
+        this.creditReward = 60;
+        this.attackDelay = 4000;
+    }
+
+    private void initializeSound() {
+        this.punchSound = new SoundClip("audio/artillery-punch.mp3");
+    }
+
+    private void initializeProjectileSpawner(MainScene mainScene) {
+        this.projectileSpawner = new ProjectileSpawner(this);
+        mainScene.addEntitySpawner(projectileSpawner);
+        startShooting();
     }
 
     private void startShooting() {
@@ -47,15 +55,12 @@ public class Artillery extends Troop implements Collided, Collider {
     @Override
     protected void manageEnemyMovement(Troop otherTroop) {
         super.manageEnemyMovement(otherTroop);
-        if (projectileSpawner.isActive()) {
-            stopShooting();
-        }
+        stopShooting();
     }
 
     @Override
     public void takeDamage(int damage) {
         super.takeDamage(damage);
-
         if (!isAlive()) {
             projectileSpawner.remove();
         }

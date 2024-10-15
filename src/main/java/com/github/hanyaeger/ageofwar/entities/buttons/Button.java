@@ -1,5 +1,6 @@
-package com.github.hanyaeger.tutorial;
+package com.github.hanyaeger.ageofwar.entities.buttons;
 
+import com.github.hanyaeger.ageofwar.utils.FontUtils;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.impl.TextEntity;
 import com.github.hanyaeger.api.userinput.MouseButtonPressedListener;
@@ -34,10 +35,15 @@ public class Button extends TextEntity implements MouseButtonPressedListener, Mo
         setCursor(Cursor.DEFAULT);
     }
 
+
     @Override
     public void onMouseButtonPressed(MouseButton mouseButton, Coordinate2D coordinate2D) {
         if (mouseButton == MouseButton.PRIMARY) {
-            action.accept(null);
+            triggerAction();
         }
+    }
+
+    private void triggerAction() {
+        action.accept(null);
     }
 }

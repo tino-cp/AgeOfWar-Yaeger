@@ -1,5 +1,6 @@
-package com.github.hanyaeger.tutorial;
+package com.github.hanyaeger.ageofwar.entities.abilities;
 
+import com.github.hanyaeger.ageofwar.entities.scenes.MainScene;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.impl.SpriteEntity;
 import com.github.hanyaeger.api.userinput.MouseButtonPressedListener;
@@ -37,7 +38,7 @@ public class AbilityButton extends SpriteEntity implements MouseButtonPressedLis
                 activateAbility();
                 startAbilityCooldown();
             } else {
-                mainScene.getErrorText().errorNotEnoughCredits();
+                mainScene.getErrorText().displayErrorNotEnoughCredits();
             }
         }
     }
@@ -47,11 +48,15 @@ public class AbilityButton extends SpriteEntity implements MouseButtonPressedLis
         scheduleAbilityDeactivation();
     }
 
+    private void deactivateAbility() {
+        abilitySpawner.pause();
+    }
+
     private void scheduleAbilityDeactivation() {
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                abilitySpawner.pause();
+                deactivateAbility();
             }
         }, ABILITY_DURATION);
     }
