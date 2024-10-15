@@ -8,6 +8,3 @@ Elk tijdperk ontgrendelt nieuwe, krachtigere eenheden en verdedigingsmechanismen
 In deze Yaeger Edition is het project gecodeerd in Java met behulp van de JavaFX-bibliotheek.
 Voor dit project is het simpel gehouden, met slechts één tijdperk, namelijk de steentijd.
 Het focust op het kernconcept van het spel, waarbij spelers strategisch eenheden kunnen produceren en inzetten om de vijandelijke basis te vernietigen.
-
-TODO:
-- [ ] Implementeer enemy AI
