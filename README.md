@@ -10,6 +10,4 @@ Voor dit project is het simpel gehouden, met slechts één tijdperk, namelijk de
 Het focust op het kernconcept van het spel, waarbij spelers strategisch eenheden kunnen produceren en inzetten om de vijandelijke basis te vernietigen.
 
 TODO:
-- [x] Implementeer basis
-- [x] Fix scene switching
-- [x] Implementeer eenheden
+- [ ] Implementeer enemy AI

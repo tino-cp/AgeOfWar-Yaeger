@@ -1,5 +1,9 @@
-package com.github.hanyaeger.tutorial;
+package com.github.hanyaeger.ageofwar.entities.troops;
 
+import com.github.hanyaeger.ageofwar.entities.Base;
+import com.github.hanyaeger.ageofwar.entities.Damageable;
+import com.github.hanyaeger.ageofwar.entities.texts.HealthText;
+import com.github.hanyaeger.ageofwar.entities.scenes.MainScene;
 import com.github.hanyaeger.api.Coordinate2D;
 import com.github.hanyaeger.api.entities.Collided;
 import com.github.hanyaeger.api.entities.SceneBorderTouchingWatcher;
@@ -13,14 +17,17 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher {
+public abstract class Troop extends DynamicSpriteEntity implements Collider, Collided, SceneBorderTouchingWatcher, Damageable {
     private MainScene mainScene;
-    private AgeOfWar ageOfWar;
+    private Timer damageTimer;
 
     private static final int DEFAULT_SPEED = 2;
+    private static final int WIDTH = 43;
+    private static final int HEIGHT = 43;
 
     private int speed;
     private int team;
+    private boolean scheduledForRemoval = false;
 
     protected int hp;
     protected int damage;
@@ -31,43 +38,41 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     protected boolean canDealDamage = true;
     private boolean damageTaskScheduled = false;
 
-    protected HealthText healthText;
+    public HealthText healthText;
     protected SoundClip punchSound;
-    private Timer damageTimer;
 
-    private boolean scheduledForRemoval = false;
-
-    protected Troop(Coordinate2D location, String sprite, int team, MainScene mainScene, AgeOfWar ageOfWar) {
+    protected Troop(Coordinate2D location, String sprite, int team, MainScene mainScene) {
         super(sprite, location);
-
         this.team = team;
         this.mainScene = mainScene;
-        this.ageOfWar = ageOfWar;
         this.speed = (team == 1) ? -DEFAULT_SPEED : DEFAULT_SPEED;
 
+        damageTimer = new Timer();
         healthText = new HealthText(this);
         mainScene.setupHealthDisplay(healthText);
 
         resumeMovement();
+    }
 
-        // Gebruik van een ScheduledExecutorService om de Timer en TimerTask te vervangen. Dit komt door de problemen met concurrency.
-        damageTimer = new Timer();
+    public static double getTroopWidth() {
+        return WIDTH;
+    }
+
+    public static double getTroopHeight() {
+        return HEIGHT;
     }
 
     public int getTeam() {
         return team;
     }
 
+    @Override
     public boolean isAlive() {
         return hp > 0;
     }
 
     public int getHp() {
         return hp;
-    }
-
-    public double getCreditCost() {
-        return creditCost;
     }
 
     public boolean isScheduledForRemoval() {
@@ -82,30 +87,42 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     public void onCollision(List<Collider> list) {
         for (Collider collider : list) {
             if (collider instanceof Troop otherTroop) {
-                if (!otherTroop.isAlive() || otherTroop.isScheduledForRemoval()) {
-                    continue;
-                }
                 manageMovement(otherTroop);
+            } else if (collider instanceof Base base) {
+                handleBaseCollision(base);
             }
         }
     }
 
+    private void handleBaseCollision(Base base) {
+        if (isEnemyBase(base)) {
+            stopMovement();
+            updateTroopMovementFlag();
+
+            if (canDealDamage) {
+                base.healthText.updateHealthText();
+                applyDamage(base);
+            }
+        }
+    }
+
+    private boolean isEnemyBase(Base base) {
+        return (team == 0 && !base.isFriendlyBase()) || (team == 1 && base.isFriendlyBase());
+    }
+
     protected void manageMovement(Troop otherTroop) {
-        if (isEnemy(otherTroop)) {
-            manageEnemyMovement(otherTroop);
-        } else if (isFriendly(otherTroop)) {
-            manageFriendlyMovement();
+        if (otherTroop.isAlive() && !otherTroop.isScheduledForRemoval()) {
+            if (isEnemy(otherTroop)) {
+                manageEnemyMovement(otherTroop);
+            } else if (isFriendly(otherTroop)) {
+                manageFriendlyMovement();
+            }
         }
     }
 
     protected void manageEnemyMovement(Troop otherTroop) {
         stopMovement();
-
-        if (team == 0) {
-            mainScene.setCanTroopsMove(false);
-        } else if (team == 1) {
-            mainScene.setCanEnemiesMove(false);
-        }
+        updateTroopMovementFlag();
 
         if (canDealDamage) {
             healthText.updateHealthText();
@@ -116,12 +133,22 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     }
 
     protected void manageFriendlyMovement() {
-        if (this.getTeam() == 0 && !mainScene.canTroopsMove()) {
-            stopMovement();
-        } else if (this.getTeam() == 1 && !mainScene.canEnemiesMove()) {
+        if (shouldStopMovement()) {
             stopMovement();
         } else {
             resumeMovement();
+        }
+    }
+
+    private boolean shouldStopMovement() {
+        return (team == 0 && !mainScene.canTroopsMove()) || (team == 1 && !mainScene.canEnemiesMove());
+    }
+
+    private void updateTroopMovementFlag() {
+        if (team == 0) {
+            mainScene.setCanTroopsMove(false);
+        } else {
+            mainScene.setCanEnemiesMove(false);
         }
     }
 
@@ -133,7 +160,7 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         }
     }
 
-    protected void applyDamage(Troop otherTroop) {
+    protected void applyDamage(Damageable target) {
         if (!canDealDamage || damageTaskScheduled) {
             return;
         }
@@ -145,12 +172,12 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
             @Override
             public void run() {
                 Platform.runLater(() -> {
-                    if (isAlive() && otherTroop.isAlive()) {
-                        otherTroop.takeDamage(damage);
+                    if (isAlive() && target.isAlive()) {
+                        target.takeDamage(damage);
                         punchSound.play();
 
-                        if (!otherTroop.isAlive()) {
-                            onEnemyDeath();
+                        if (!target.isAlive()) {
+                            onTargetDeath();
                         }
                     }
 
@@ -164,17 +191,15 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         }, attackDelay, attackDelay);
     }
 
-    protected void onEnemyDeath() {
-        if (team == 0) {
-            mainScene.setCanTroopsMove(true);
-        } else if (team == 1) {
-            mainScene.setCanEnemiesMove(true);
-        }
+
+    protected void onTargetDeath() {
+        mainScene.setCanTroopsMove(true);
+        mainScene.setCanEnemiesMove(true);
         damageTaskScheduled = false;
     }
 
-
-    protected void takeDamage(int damage) {
+    @Override
+    public void takeDamage(int damage) {
         hp -= damage;
 
         if (!isAlive()) {
@@ -183,26 +208,26 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
     }
 
     private void onTroopDeath() {
-        SoundClip deathSound = new SoundClip("audio/death.mp3");
-        deathSound.play();
-        scheduleRemoval();
+        new SoundClip("audio/death.mp3").play();
+        checkRemoval();
         canDealDamage = false;
     }
 
-    private void scheduleRemoval() {
+    private void checkRemoval() {
         scheduledForRemoval = true;
-
-        if (team == 0) {
-            mainScene.troopList.remove(Troop.this);
-        } else if (team == 1) {
-            mainScene.enemyList.remove(Troop.this);
-            mainScene.getCreditText().increaseCredit(creditReward);
-        }
+        removeFromScene();
 
         healthText.remove();
         remove();
+    }
 
-        checkGameOver();
+    private void removeFromScene() {
+        if (team == 0) {
+            mainScene.troopList.remove(this);
+        } else {
+            mainScene.enemyList.remove(this);
+            mainScene.getCreditText().increaseCredit(creditReward);
+        }
     }
 
     protected void stopMovement() {
@@ -215,19 +240,12 @@ public abstract class Troop extends DynamicSpriteEntity implements Collider, Col
         healthText.setMotion(speed, 90d);
     }
 
-    protected boolean isEnemy(Troop otherTroop) {
+    public boolean isEnemy(Troop otherTroop) {
         return otherTroop.getTeam() != this.getTeam();
     }
 
     protected boolean isFriendly(Troop otherTroop) {
         return otherTroop.getTeam() == this.getTeam();
-    }
-
-    public void checkGameOver() {
-        if (mainScene.enemyList.isEmpty()) {
-            damageTimer.cancel();
-            ageOfWar.setActiveScene(3);
-        }
     }
 
     @Override
