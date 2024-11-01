@@ -89,7 +89,7 @@ public class MainScene extends DynamicScene implements EntitySpawnerContainer {
         addEntity(new Floor(new Coordinate2D(0, Floor.getFloorY()), this));
     }
 
-    public void setupTextDisplay() {
+    private void setupTextDisplay() {
         creditText = new CreditText(new Coordinate2D(100, 20));
         addEntity(creditText);
 
