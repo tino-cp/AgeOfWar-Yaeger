@@ -17,7 +17,6 @@ public class AbilitySpawner extends EntitySpawner {
     public AbilitySpawner(MainScene mainScene) {
         super(SPAWN_INTERVAL);
         this.mainScene = mainScene;
-        this.random = new Random();
         pause();
     }
 
